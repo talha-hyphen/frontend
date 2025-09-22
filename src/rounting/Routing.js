@@ -8,7 +8,6 @@ import CreatePost from '../pages/CreateEditPost';
 import Leaderboard from '.././pages/Leaderboard';
  import React from 'react'
  import Navbar from "../component/Navbar";
-
 export default function Routing() {
   return (
     <div> 
