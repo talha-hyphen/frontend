@@ -2,111 +2,113 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import apiClient from "../api/apiClient";
 
 export default function PostDetails() {
-  const { id } = useParams();  // post id from URL
+  const { id } = useParams(); // post id from URL
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    // Fetch post
-    axios.get(`http://localhost:5000/api/posts/${id}`)
-      .then(res => {
+    apiClient
+      .get(`/posts/${id}`)
+      .then((res) => {
         setPost(res.data.post);
-        setComments(res.data.comments || []);
       })
-      .catch(err => console.error(err));
+      .catch((err) => console.error(err));
+
+    apiClient
+      .get(`/comments/${id}`)
+      .then((res) => {
+        setComments(res.data.comments);
+      })
+      .catch((err) => console.error(err));
   }, [id]);
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
     try {
-      const res = await axios.post(
-        `http://localhost:5000/api/posts/${id}/comments`,
+      const res = await apiClient.post(
+        `/comments/${id}`,
         { content: commentText },
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      setComments(prev => [...prev, res.data.comment]);
+      setComments((prev) => [...prev, res.data.comment]);
       setCommentText("");
     } catch (err) {
-      console.error("Error adding comment", err);
-      alert("Failed to add comment");
+      console.error("Error posting comment", err.response?.data || err);
+      alert(err.response?.data?.message || "Can't add comment");
     }
   };
 
   if (!post) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-gray-500 text-lg">Loading...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-8 md:px-10">
-      <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">{post.title}</h1>
-        <div className="flex items-center text-sm text-gray-500 mb-4">
-          <span>By {post.author?.username || "Unknown"}</span>
-          <span className="mx-2">•</span>
-          <span>{new Date(post.createdAt).toLocaleString()}</span>
-        </div>
-        <div className="prose mb-6">
-          {post.content}
-        </div>
-        <div className="flex flex-wrap gap-2 mb-6">
-          {post.tags.map((tag, idx) => (
-            <span
-              key={idx}
-              className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full"
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md my-8">
+      {/* Post Header */}
+      <h1 className="text-3xl font-bold text-blue-700 mb-2">{post.title}</h1>
+      <p className="text-sm text-gray-500 mb-6">By <span className="font-medium">{post.user.username}</span></p>
+
+      {/* Post Content */}
+      <div className="prose max-w-none mb-8 whitespace-pre-wrap">{post.content}</div>
+
+      {/* Comments Section */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">Comments ({comments.length})</h2>
+
+        {comments.length === 0 && (
+          <p className="text-gray-500 mb-4">No comments yet. Be the first to comment!</p>
+        )}
+
+        <div className="space-y-4 mb-8">
+          {comments.map((c) => (
+            <div
+              key={c._id}
+              className="bg-gray-100 p-4 rounded-md shadow-sm"
             >
-              #{tag}
-            </span>
+              <p className="text-sm text-gray-700">
+                <strong className="font-semibold">{c.user.username}</strong>: {c.content}
+              </p>
+            </div>
           ))}
         </div>
-        <hr className="my-6" />
 
-        {/* Comments Section */}
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Comments</h2>
-          {comments.length === 0 && (
-            <p className="text-gray-500 mb-4">No comments yet. Be the first to comment.</p>
-          )}
-          <ul className="space-y-4 mb-6">
-            {comments.map((c) => (
-              <li
-                key={c._id}
-                className="bg-gray-50 rounded-lg p-4 shadow-sm"
-              >
-                <div className="flex items-center text-sm text-gray-600 mb-2">
-                  <span className="font-medium">{c.user?.username || "User"}</span>
-                  <span className="mx-2">•</span>
-                  <span>{new Date(c.createdAt).toLocaleString()}</span>
-                </div>
-                <p className="text-gray-800">{c.content}</p>
-              </li>
-            ))}
-          </ul>
-
-          {/* Add Comment Form */}
+        {/* Add Comment Form */}
+        {token ? (
           <form onSubmit={handleCommentSubmit} className="space-y-4">
             <textarea
-              className="w-full border border-gray-300 rounded-md p-3 focus:border-blue-500 focus:ring-blue-200"
-              placeholder="Write a comment..."
+              className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows="4"
+              placeholder="Write your comment here..."
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              rows={4}
-              required
             />
             <button
               type="submit"
-              className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition"
+              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition"
             >
               Add Comment
             </button>
           </form>
-        </div>
-      </div>
+        ) : (
+          <p className="text-gray-600">
+            Please <span className="text-blue-600 font-semibold">login</span> to add comments.
+          </p>
+        )}
+      </section>
     </div>
   );
 }

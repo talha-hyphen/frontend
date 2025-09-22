@@ -1,6 +1,8 @@
+// src/pages/Login.js
+
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import apiClient from "../api/apiClient";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -13,13 +15,15 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/login", form);
+      const res = await apiClient.post("/auth/login", form);
       localStorage.setItem("token", res.data.token);
+      // You might also store user in context
       navigate("/");
     } catch (err) {
-      alert("Login failed. Check credentials.");
+      console.error("Login error", err.response?.data || err);
+      alert(err.response?.data?.message || "Login failed");
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 to-blue-200 px-4">

@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import axios from "axios";
-
+import apiClient from "../api/apiClient";
 export default function Profile() {
   const { id } = useParams(); // user id
   const [user, setUser] = useState(null);
@@ -12,7 +11,7 @@ export default function Profile() {
 
   useEffect(() => {
     // Fetch user info
-    axios.get(`http://localhost:5000/api/users/${id}`)
+    apiClient.get("/users/:id")
       .then(res => {
         setUser(res.data.user);
         setPosts(res.data.posts || []);

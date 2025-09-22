@@ -1,14 +1,14 @@
 // src/pages/Leaderboard.js
 
 import { useEffect, useState } from "react";
-import axios from "axios";
+ import apiClient from "../api/apiClient";
 import { Link } from "react-router-dom";
 
 export default function Leaderboard() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/leaderboard`)
+    apiClient.get("/leaderboard")
       .then(res => setUsers(res.data.users || []))
       .catch(err => console.error(err));
   }, []);
